@@ -12,6 +12,9 @@ from telebot import types
 from random import choice
 from string import ascii_letters
 
+import threading
+mutex = threading.Lock()
+
 from telebot import apihelper
 apihelper.proxy = {'https': 'socks5://116405641:EgwmiTnv@orbtl.s5.opennetwork.cc:999'}
 
@@ -28,12 +31,14 @@ keyword = misc.keyword
 #  bot.config['api_key'] = token
 print(bot.get_me())
 os.system("rm -r ./temp/*")
+mutex.acquire()
 with shelve.open("db") as states:
     #  print("db:")
     for key in states:
         userlist.append(key)
     #  for state in states.items():
         #  print(state)
+mutex.release()
 print(userlist)
 
 def log(message, answer):
@@ -74,9 +79,11 @@ def handle_text(message):
     if str(message.from_user.id) not in userlist:
         if message.text in keyword:
             log(message, answer)
+            mutex.acquire()
             with shelve.open("db") as states:
                 states[str(message.from_user.id)] = "1"
-                print("add user in db")
+            print("add user in db")
+            mutex.release()
             userlist.append(str(message.from_user.id))
             bot.send_message(message.from_user.id, "congratz")
         else:
@@ -89,8 +96,10 @@ def handle_text(message):
             log(message, answer)
 
             namedir = (''.join(choice(ascii_letters) for i in range(12)))
+            mutex.acquire()
             with shelve.open("db") as states:
                 speed = states.get(str(message.from_user.id), "1")
+            mutex.release()
             os.system("./road.sh {0} {1} {2}".format(youtube_link, namedir, speed))
 
             directory = "./temp/{0}".format(namedir)
@@ -142,29 +151,39 @@ def handle_text(message):
 @bot.callback_query_handler(func=lambda c:True)
 def inline(c):
     if c.data == "speed1":
+        mutex.acquire()
         with shelve.open("db") as states:
             #  print(states[str(c.from_user.id)])
             states[str(c.from_user.id)] = "1"
+        mutex.release()
         bot.send_message(c.from_user.id, "select speed: 1")
 
     elif c.data == "speed1.25":
+        mutex.acquire()
         with shelve.open("db") as states:
             states[str(c.from_user.id)] = "1.25"
+        mutex.release()
         bot.send_message(c.from_user.id, "select speed: 1.25")
 
     elif c.data == "speed1.5":
+        mutex.acquire()
         with shelve.open("db") as states:
             states[str(c.from_user.id)] = "1.5"
+        mutex.release()
         bot.send_message(c.from_user.id, "select speed: 1.5")
 
     elif c.data == "speed1.75":
+        mutex.acquire()
         with shelve.open("db") as states:
             states[str(c.from_user.id)] = "1.75"
+        mutex.release()
         bot.send_message(c.from_user.id, "select speed: 1.75")
 
     elif c.data == "speed2":
+        mutex.acquire()
         with shelve.open("db") as states:
             states[str(c.from_user.id)] = "2"
+        mutex.release()
         bot.send_message(c.from_user.id, "select speed: 2")
 
 if __name__ == '__main__':
